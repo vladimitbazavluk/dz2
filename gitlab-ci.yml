@@ -1,0 +1,26 @@
+stages:
+  - build
+  - deploy
+
+build_image:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  variables:
+    DOCKER_DRIVER: overlay2
+    IMAGE_NAME: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  script:
+    - echo "Building the Docker image..."
+    - docker build -t $IMAGE_NAME .
+    - echo "Pushing the Docker image to the registry..."
+    - docker push $IMAGE_NAME
+
+deploy_image:
+  stage: deploy
+  image: docker:latest
+  script:
+    - echo "Copying docker-compose.yml to the remote server..."
+    - scp -o StrictHostKeyChecking=no -i /path/to/your/private/key docker-compose.yml user@your-remote-server:/path/to/deploy/
+    - echo "Starting the Docker containers..."
+    - ssh -o StrictHostKeyChecking=no -i /path/to/your/private/key user@your-remote-server "cd /path/to/deploy && docker-compose up -d"
